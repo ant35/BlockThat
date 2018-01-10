@@ -14,6 +14,8 @@ function grabDomain(url) {
 	return url.match(/^[\w-]+:\/{2,}\[?([\w\.:-]+)\]?(?::[0-9]*)?/)[1];
 }
 /*------------------Animation-------------------------------------*/
+//animateTrash() controls the animation of the doodle on the popup.
+//Since javascript is a one-thread language, this is quite annoying (as you can see) to implement.
 function animateTrash(){
 	setTimeout(function() {
 		animateTrash2();
@@ -58,6 +60,7 @@ function animateTrash5(){
 
 }
 /*----------------Monitoring URL changes--------------------------*/
+//Checks the url bar to see if it contains a blocked site. If so, it closes the window. 
 function queryBlock(){
 	chrome.tabs.query({"active": true, "lastFocusedWindow": true}, function (d) { //get current webpage
 		var curr = d[0].url;	
@@ -83,16 +86,19 @@ function queryBlock(){
 	});
 }
 
-/*If you go to a site you aren't allowed to visit, you'll be redirected.*/
+/*Event listener for url bar updates*/
 chrome.tabs.onUpdated.addListener(function(tabid,changeInfo,tab) {
 		queryBlock(); //decide whether to block or not
 	}
 );
 
 /*-----------------------Button functionality---------------------------*/
+
 document.getElementById("block_that_button").addEventListener("click",buttonClick);
 document.getElementById("blocked_sites_button").addEventListener("click",showSites);
 document.getElementById("animate").addEventListener("click",animateTrash);
+
+/*Shows the currently blocked sites*/
 function showSites() {
 	var str = "";
 	chrome.storage.sync.get(null,function(sites) {
@@ -122,19 +128,22 @@ function buttonClick(){
 	var textbox = document.getElementById("url");
  	var text = textbox.value;
 	
+	//Only allow sites that begin with http protocol
 	if (text.substring(0,4) == "http") {
+	  //Isolate the hostname.
 	  text = grabDomain(text);
 	} else {
 		textbox.value = "Url must start with 'http' or 'https'";
 		return;
 	}
 	
-
 	  chrome.storage.sync.get(text,function(items) {
 		if (items[text] != text) {
+			//confirm choice to block
 			var msg = "Are you sure you want to block " + text + " and all associated sites?.\n This cannot be undone...";
 			if (confirm(msg)) blockSite(text);
 		} else {
+			//Site has already been registered in chrome.storage.sync
 			alert("Site is already blocked.");
 		}
 	  });
